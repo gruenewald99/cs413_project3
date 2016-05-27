@@ -1,76 +1,72 @@
 var gameport = document.getElementById("gameport");
-var renderer = PIXI.autoDetectRenderer(600,600, {BackgroundColor: 0x3344ee});
+var renderer = PIXI.autoDetectRenderer(608,608, {BackgroundColor: 0x3344ee});
 
-gameport.appendChild(renderer.view);
-PIXI.loader.add("assets.json").load();
 var stage = new PIXI.Container();
-// load in the image
-var start_button = PIXI.Texture.fromImage("start_button.png");
-var ship = PIXI.Texture.fromImage("ship.png");
-var background = PIXI.Texture.fromImage("stars.png");
-//save the different scenes
-var scene1 = new PIXI.Container();
-var scene2 = new PIXI.Container();
-//create sprites
-var button = new PIXI.Sprite(start_button);
-var player = new PIXI.Sprite(ship);
-var stars= new PIXI.Sprite(background)
+var player = new PIXI.Container();
 
-var current_screen = new PIXI.Container();
-scene2.addChild(stars);
-scene1.addChild(button);
-scene2.addChild(player);
-stage.addChild(scene1);
-stage.addChild(scene2);
-scene2.visible=true;
-current_screen = scene1;
-function mouseHandler(e)
-{
-  current_screen = scene2;
-  animate_game();
-
-}
-function mouseHandler2(e)
-{
-  var xpos = e.clientX -20 ;
-  var ypos = e.clientY -60;
-  createjs.Tween.get(player.position).to({x: xpos, y:ypos}, 1000);
-
-}
-var timertext = new PIXI.Text('60');
+PIXI.loader
+  .add('assets.json')
+  .add('map','map.json')
+  .add('tiles','map.png')
+  .load(ready);
+  function ready()
+  {
+  var tu =new TileUtilities(PIXI);
+  world = tu.makeTiledWorld("map", 'map.png');
+  stage.addChild(world);
 
 
-player.position.x = 300;
-player.position.y = 560;
-document.addEventListener('mousedown',mouseHandler2,false);
-button.interactive = true;
-button.on('mousedown', mouseHandler);
-button.position.x = 200;
-button.position.y = 200;
+  player.moving_frame = new PIXI.Sprite.fromFrame("leroy2.png");
+  player.still_frame = new PIXI.Sprite.fromFrame("leroy1.png");
+  player.addChild(player.moving_frame);
+  player.addChild(player.still_frame);
+  player.moving_frame.visible = false;
+  player.position.x = 540;
+  player.position.y = 580;
+
+
+  var entity_layer = world.getObject("Tile Layer 1");
+  entity_layer.addChild(player);
+    animate();
+  }
+gameport.appendChild(renderer.view);
+
+var world;
+var player;
+
+
+
+  function move_player() {
+    player.moving_frame.visible = true;
+    player.still_frame.visible = false;
+    // do any other move logic
+  }
+
+  function still_player() {
+    player.moving_frame.visible = false;
+    player.still_frame.visible = true;
+    // do any other still logic
+  }
+
 document.addEventListener('keydown', onKeyDown);
-if(current_screen == scene1)
-{
-  animate_start_screen();
-}else
-{
-  animate_game();
+document.addEventListener('keyup', onKeyUp);
+function animate(timestamp) {
+  requestAnimationFrame(animate);
+  renderer.render(stage);
 }
-function animate_start_screen()
+function onKeyUp(key)
 {
- renderer.render(scene1);
- requestAnimationFrame(animate_start_screen);
-}
-function animate_game()
-{
-  renderer.render(scene2);
-  requestAnimationFrame(animate_game);
+  still_player();
+
+
 }
 function onKeyDown(key)
 {
+  move_player();
  if(key.keyCode ===87 || key.keyCode === 38)
  {
    //checks to make sure you arent at the edge of the world
-   if(player.position.y != 0)
+   if(player.position.y >= 0)
    {
      player.position.y -=20;
 
@@ -79,7 +75,7 @@ function onKeyDown(key)
    if (key.keyCode === 83 || key.keyCode === 40)
    {
        //checks to make sure you arent at the edge of the world
-       if(player.position.y != 560)
+       if(player.position.y <= 560)
        {
            player.position.y += 20;
        }
@@ -89,7 +85,7 @@ function onKeyDown(key)
    if (key.keyCode === 65 || key.keyCode === 37)
    {
        //checks to make sure you arent at the edge of the world
-       if (player.position.x != 0)
+       if (player.position.x >= 10)
        {//moves player
            player.position.x -= 20;
        }
@@ -100,7 +96,7 @@ function onKeyDown(key)
    if (key.keyCode === 68 || key.keyCode === 39)
    {
        //checks to make sure you arent at the edge of the world
-       if (player.position.x != 560)
+       if (player.position.x <= 560)
        {
            // Don't move to the right if the player is at the right side of the stage
            player.position.x += 20;
